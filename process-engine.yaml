@@ -1,0 +1,1219 @@
+swagger: '2.0'
+x-asee-visibility: public
+info:
+  version: v1
+  title: Process Engine API
+  description: |
+    Common API for integration with process engine (BPMN)
+  contact:
+    name: Nebojsa Dinic
+    url: https://bankapi.net/docs/process-engine-getstarted.html
+    email: nebojsa.dinic@asseco-see.rs
+host: bankapi.net
+basePath: /v1/process-engine
+schemes:
+  - https
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+tags:
+  - name: BPMN
+    description: Working with bpmn engine
+  - name: DMN
+    description: Working with decision engine
+  - name: Task
+    description: Working with tasks
+  - name: Process
+    description: Working with processes
+
+paths:
+
+# ****************************************************#
+# Process Definition                                   #
+# ****************************************************#
+
+  /process-definition:
+    get:
+      summary: Retrieves a list of process definitions
+      description: Retrieves a list of process definitions
+      operationId: ProcessDefinition_GetList
+      produces:
+        - application/json
+      tags:
+        - Process
+      parameters:
+        - $ref: '#/parameters/page-size-param'
+        - $ref: '#/parameters/page-param'
+        - $ref: '#/parameters/sort-order-param'
+        - $ref: '#/parameters/sort-by-param'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-definition-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      x-asee-tags:
+        - Sortable
+        - Pageable
+  /process-definition/{process-definition-id}:
+    parameters:
+      - $ref: '#/parameters/process-definition-id-param'
+    get:
+      summary: Retrieves a process definition
+      description: Retrieves a process definition
+      operationId: ProcessDefinition_GetById
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-definition'
+        default:
+          $ref: '#/responses/default-error-response'
+  /process-definition/key/{process-definition-key}:
+    parameters:
+      - $ref: '#/parameters/process-definition-key-param'
+    get:
+      summary: Retrieves the latest version of process definition
+      description: Retrieves the latest version of process definition
+      operationId: ProcessDefinition_GetByKey
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-definition'
+        default:
+          $ref: '#/responses/default-error-response'
+  /process-definition/{process-definition-id}/start:
+    parameters:
+      - $ref: '#/parameters/process-definition-id-param'
+    post:
+      summary: Instantiates a given process definition.
+      description: Instantiates a given process definition.
+      operationId: ProcessDefinition_StartById
+      produces:
+        - application/json
+      tags:
+        - Process
+      parameters:
+        - $ref: '#/parameters/variables-param'
+      responses:
+        200:
+          description: An ID of the newly created process instance
+          schema:
+            type: string
+        default:
+          $ref: '#/responses/default-error-response'
+  /process-definition/key/{process-definition-key}/start:
+    parameters:
+      - $ref: '#/parameters/process-definition-key-param'
+    post:
+      summary: Starts the latest version of process definition
+      description: Starts the latest version of process definition
+      operationId: ProcessDefinition_StartByKey
+      produces:
+        - application/json
+      tags:
+        - Process
+      parameters:
+        - $ref: '#/parameters/variables-param'
+      responses:
+        200:
+          description: An ID of the newly created process instance
+          schema:
+            type: string
+        default:
+          $ref: '#/responses/default-error-response'
+
+
+# ****************************************************#
+# Process Instances                                   #
+# ****************************************************#
+
+  /process-instances:
+    get:
+      summary: Retrieves a list of running process
+      description: Retrieves a list of tasks. Normally, this is not used except in administrative purposes.
+      operationId: ProcessInstance_GetList
+      produces:
+        - application/json
+      tags:
+        - Process
+      parameters:
+        - $ref: '#/parameters/sort-order-param'
+        - $ref: '#/parameters/sort-by-param'
+        - $ref: '#/parameters/page-size-param'
+        - $ref: '#/parameters/page-param'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-instance-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      x-asee-tags:
+        - Sortable
+        - Pageable
+  /process-instances/{process-instance-id}:
+    parameters:
+      - $ref: '#/parameters/process-instance-id-param'
+    get:
+      summary: Retrieves a list of running process
+      description: Retrieves a list of process instances
+      operationId: ProcessInstance_Get
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-instance'
+        default:
+          $ref: '#/responses/default-error-response'
+  /process-instances/{process-instance-id}/variables:
+    parameters:
+      - $ref: '#/parameters/process-instance-id-param'
+    get:
+      summary: Retrieves a list of variable of the process
+      description: Retrieves a list of variables
+      operationId: ProcessInstanceVariables_Get
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/variable-list'
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variables of the process
+      description: Sets variables and theirs values of the process
+      operationId: ProcessInstanceVariables_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/variables-param'
+      tags:
+        - Process
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+  /process-instances/{process-instance-id}/variables/{var-id}:
+    parameters:
+      - $ref: '#/parameters/process-instance-id-param'
+      - $ref: '#/parameters/variable-id-param'
+    get:
+      summary: Retrieves a variable of the process instance
+      description: |
+        Retrieves a variable definition and data. If the variable is binary,
+        value is empty and data is to be retrieved via data subpath.
+      operationId: ProcessInstanceVariable_Get
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/variable'
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variable of the process
+      description: Sets variable and its value of the process instance
+      operationId: ProcessInstanceVariable_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/variable-param'
+      tags:
+        - Process
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+
+  /process-instances/{process-instance-id}/variables/{var-id}/data:
+    parameters:
+      - $ref: '#/parameters/process-instance-id-param'
+      - $ref: '#/parameters/variable-id-param'
+    get:
+      summary: Retrieves a variable of the process instance
+      description: |
+        Retrieves a variable definition and data. If the variable is binary,
+        value is empty and data is to be retrieved via data subpath.
+      operationId: ProcessInstanceVariableData_Get
+      produces:
+        - application/octet-stream
+      tags:
+        - Process
+      responses:
+        200:
+          description: Success
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: string
+              description: E.g. application/xml; charset=utf-8
+            Content-Disposition:
+              type: string
+              description: E.g. attachment; filename=myfile.xml
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variable binary data
+      description: Sets variable binary data
+      operationId: ProcessInstanceVariableData_Post
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/binary-data-param'
+      tags:
+        - Process
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+
+  /message:
+    post:
+      summary: Notifies the process that a message has been received.
+      description: |
+        Notifies the process that a message has been received.
+        Correlation is being done according to a set of keys.
+        Only one result is expected!
+        Variables are added to a variable map of the instance.
+      operationId: ProcessInstanceMessage_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/message-param'
+      tags:
+        - Process
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+
+
+# ****************************************************#
+# Tasks                                               #
+# ****************************************************#
+
+  /tasks:
+    get:
+      summary: Retrieves a list of tasks
+      description: Retrieves a list of tasks
+      operationId: Task_GetList
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/sort-order-param'
+        - $ref: '#/parameters/sort-by-param'
+        - $ref: '#/parameters/page-size-param'
+        - $ref: '#/parameters/page-param'
+        - $ref: '#/parameters/assignee-param'
+        - $ref: '#/parameters/candidate-groups-param'
+        - name: includeAssignedTasks
+          description: |
+            If set true, query will return all tasks, including already assigned tasks.
+            If false, query will return unassigned tasks only.
+            Default is to only include tasks that are not assigned to any user if you query by candidate group(s).
+          type: boolean
+          required: false
+          in: query
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/task-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      x-asee-tags:
+        - Sortable
+        - Pageable
+  /tasks/{task-id}:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    get:
+      summary: Retrieves a task
+      description: Retrieves a task
+      operationId: Task_Get
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/task'
+        default:
+          $ref: '#/responses/default-error-response'
+  /tasks/{task-id}/claim:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    post:
+      summary: Claims a task
+      description: When user tries to claim a task, server should accept claim by only one user
+      operationId: Task_Claim
+      parameters:
+        - $ref: '#/parameters/claimer-param'
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+  /tasks/{task-id}/submit:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    post:
+      summary: Submits a task
+      description: Submission of the task, with or without variables
+      operationId: Task_Submit
+      parameters:
+        - $ref: '#/parameters/variables-param'
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+  /tasks/{task-id}/variables:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    get:
+      summary: Retrieves a list of variables of the task
+      description: Retrieves a list of variables of particular task
+      operationId: TaskVariables_Get
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/variable-list'
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variables of the task
+      description: Sets variables and theirs values of the task
+      operationId: TaskVariables_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/variables-param'
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+  /tasks/{task-id}/comments:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    get:
+      summary: Retrieves a list of comments of the task
+      description: Retrieves a list of comments of particular task
+      operationId: TaskComments_Get
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/comment-list'
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Creates a new task comment
+      description: Creates a new task comment
+      operationId: TaskComments_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/comment-param'
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+
+  /tasks/{task-id}/variables/{var-id}:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+      - $ref: '#/parameters/variable-id-param'
+    get:
+      summary: Retrieves a variable of the task
+      description: |
+        Retrieves a variable type and data of particular task.
+        If a variable is file (binary), value is empty and it should be
+        retrieved via data subpath.
+      operationId: TaskVariable_Get
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/variable'
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variables of the task
+      description: Sets variables and theirs values of the task
+      operationId: TaskVariable_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/variable-param'
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+  /tasks/{task-id}/variables/{var-id}/data:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+      - $ref: '#/parameters/variable-id-param'
+    get:
+      summary: Retrieves data of a variable of the task
+      description: |
+        Retrieves a variable type and data of particular task.
+        If a variable is file (binary), value is empty and it should be
+        retrieved via data subpath.
+      operationId: TaskVariableData_Get
+      produces:
+        - application/octet-stream
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: string
+              description: E.g. application/xml; charset=utf-8
+            Content-Disposition:
+              type: string
+              description: E.g. attachment; filename=myfile.xml
+        default:
+          $ref: '#/responses/default-error-response'
+    post:
+      summary: Sets variables of the task
+      description: Sets variables and theirs values of the task
+      operationId: TaskVariableData_Post
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/binary-data-param'
+      tags:
+        - Task
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/responses/default-error-response'
+
+  /tasks/create:
+    post:
+      summary: Creates an ad-hoc task
+      description: |
+        If sometimes is ad-hoc task needed, it can be created without Process Instance.
+        Advice how to use:
+          id should be null to let the engine create unique ID
+          name should be mandatory, because it will be shown in the task list
+          priority: 50 is standard, high may be 80 or 90
+          assignee: probably someone knows to whom he/she sends a task
+          owner may be left empty
+          delegationState: if assignee is filled, it should be RESOLVED, othervise PENDING
+          due and followUp can be used if needed
+          {
+            "id": null,
+            "name": "Task name, may be mandatory",
+            "description": "This have to be done very urgent",
+            "priority" : 50,
+            "assignee" : "demo",
+            "owner" : null,
+            "delegationState" : "RESOLVED",
+            "due" : "2016-05-30T10:00:00",
+            "followUp" : "2016-05-25T10:00:00"
+          }
+      operationId: TaskCreate_Post
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/task-param'
+      tags:
+        - Task
+      responses:
+        '200':
+          description: An ID of the newly created task
+          schema:
+            type: string
+        default:
+          $ref: '#/responses/default-error-response'
+
+
+
+# ****************************************************#
+# History                                             #
+# ****************************************************#
+
+  /history/process-instances:
+    get:
+      summary: Retrieves a list of processes from history
+      description: Retrieves a list of process instances from history
+      operationId: HistoryProcessInstance_GetList
+      produces:
+        - application/json
+      tags:
+        - Process
+      parameters:
+        - $ref: '#/parameters/page-size-param'
+        - $ref: '#/parameters/page-param'
+        - $ref: '#/parameters/started-by-param'
+        - $ref: '#/parameters/started-before-param'
+        - $ref: '#/parameters/started-after-param'
+        - $ref: '#/parameters/finished-before-param'
+        - $ref: '#/parameters/finished-after-param'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-instance-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      x-asee-tags:
+        - Sortable
+        - Pageable
+  /history/process-instances/{process-instance-id}:
+    parameters:
+      - $ref: '#/parameters/process-instance-id-param'
+    get:
+      summary: Retrieves a process data from the history
+      description: Retrieves a process data from the history
+      operationId: HistoryProcessInstance_Get
+      produces:
+        - application/json
+      tags:
+        - Process
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/process-instance'
+        default:
+          $ref: '#/responses/default-error-response'
+
+  /history/task:
+    get:
+      summary: Retrieves a list of tasks from history
+      description: Retrieves a list of tasks from history
+      operationId: HistoryTask_GetList
+      produces:
+        - application/json
+      tags:
+        - Task
+      parameters:
+        - $ref: '#/parameters/page-size-param'
+        - $ref: '#/parameters/page-param'
+        - $ref: '#/parameters/sort-order-param'
+        - $ref: '#/parameters/sort-by-param'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/task-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      x-asee-tags:
+        - Sortable
+        - Pageable
+  /history/task/{task-id}:
+    parameters:
+      - $ref: '#/parameters/task-id-param'
+    get:
+      summary: Retrieves a task data from the history
+      description: Retrieves a task data from the history
+      operationId: HistoryTask_Get
+      produces:
+        - application/json
+      tags:
+        - Task
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/task'
+        default:
+          $ref: '#/responses/default-error-response'
+
+parameters:
+
+
+# ****************************************************#
+# PARAMETERS COMMON WITH OTHER APIs                   #
+# ****************************************************#
+
+  page-size-param:
+    description: 'Number of items on a page. For more information see general guidance on [paging and sorting]().'
+    in: query
+    name: page-size
+    required: false
+    format: int32
+    type: integer
+  page-param:
+    description: 'Page index. For more information see general guidance on [paging and sorting]().'
+    in: query
+    name: page
+    required: false
+    format: int32
+    type: integer
+  sort-order-param:
+    description: 'Sort order (`asc` or `desc`). Default is asc. For more information see general guidance on [paging and sorting]()'
+    in: query
+    name: sort-order
+    required: false
+    enum:
+      - asc
+      - desc
+    type: string
+  sort-by-param:
+    description: 'Attribute of the collection item to sort by. For more information see general guidance on [paging and sorting](a).'
+    in: query
+    name: sort-by
+    required: false
+    type: string
+
+
+# ****************************************************#
+# PARAMETERS SPECIFIC FOR THE API                     #
+# ****************************************************#
+
+  variable-id-param:
+    name: var-id
+    description: |
+      ID of the variable generated by the Process Engine.
+      Same schema is used for all variables, regardless of the context (process or task).
+    in: path
+    type: string
+    required: true
+  task-id-param:
+    name: task-id
+    description: |
+      ID of the task instance generated by the Process Engine.
+      note this is not a key of the Task definition!
+    in: path
+    type: string
+    required: true
+  process-instance-id-param:
+    name: process-instance-id
+    description: ID of the process instance generated by the Process Engine
+    in: path
+    type: string
+    required: true
+  variables-param:
+    description: List of variables
+    name: variables
+    required: false
+    in: body
+    schema:
+      $ref: '#/definitions/variable-list'
+  variable-param:
+    description: Variable definition and data
+    name: variable
+    required: false
+    in: body
+    schema:
+      $ref: '#/definitions/variable'
+
+  comment-param:
+    description: Comment for a task
+    name: comment
+    required: true
+    in: body
+    schema:
+      $ref: '#/definitions/comment'
+
+  message-param:
+    description: Message received for the process instance
+    name: message
+    required: true
+    in: body
+    schema:
+      $ref: '#/definitions/message'
+
+  binary-data-param:
+    description: Binary data if content is file (binary)
+    name: binary-data
+    required: true
+    allowEmptyValue: true
+    in: formData
+    type: file
+
+  process-definition-id-param:
+    name: process-definition-id
+    description: The id of the process definition to be retrieved.
+    in: path
+    type: string
+    required: true
+  process-definition-key-param:
+    name: process-definition-key
+    description: The key of the process definition (the latest version thereof) to be retrieved.
+    in: path
+    type: string
+    required: true
+
+  task-param:
+    description: Task data
+    name: task
+    required: false
+    in: body
+    schema:
+      $ref: '#/definitions/task'
+
+  assignee-param:
+    description: 'User ID as an assignee for the task'
+    in: query
+    name: assignee
+    required: false
+    type: string
+
+  claimer-param:
+    description: 'User ID as an assignee for the task'
+    in: query
+    name: assignee
+    required: true
+    type: string
+
+  candidate-groups-param:
+    description: 'List of candidate groups for particular task'
+    in: query
+    name: candidate-groups
+    required: false
+    type: array
+    collectionFormat: csv
+    items:
+      type: string
+
+
+  started-by-param:
+    description: Only include process instances that were started by the given user.
+    name: started-by
+    type: string
+    format: date-time
+    required: false
+    in: query
+  started-before-param:
+    description: Restrict to instances that were started before the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.
+    name: started-before
+    type: string
+    format: date-time
+    required: false
+    in: query
+  started-after-param:
+    description: Restrict to instances that were started after the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.
+    name: started-after
+    type: string
+    format: date-time
+    required: false
+    in: query
+  finished-before-param:
+    description: Restrict to instances that were finished before the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.
+    name: finished-before
+    type: string
+    format: date-time
+    required: false
+    in: query
+  finished-after-param:
+    description: Restrict to instances that were finished after the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.
+    name: finished-after
+    type: string
+    format: date-time
+    required: false
+    in: query
+
+responses:
+# ****************************************************#
+# RESPONSES COMMON WITH OTHER APIs                    #
+# ****************************************************#
+
+  default-error-response:
+    description: Besides specific status codes above, other standard http [status codes](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) can be returned for each request. To learn more see general guidance on [error handling](common-getstarted.html#error-handling)
+
+definitions:
+
+# ****************************************************#
+# MODELS SPECIFIC FOR ACCOUNTING APIs                 #
+# ****************************************************#
+
+
+
+  task-list:
+    type: array
+    description: List of tasks
+    items:
+      $ref: '#/definitions/task'
+    example:
+      items:
+        -
+          id: 16c2ae11-2264-11e6-bbf5-848b945f5a44
+          name: Check input data
+          assignee: demo.user
+          created: 2016-10-30'T'12:55:00
+          due: 2016-11-30'T'12:55:00
+          description: Validate all data
+          priority: 50
+          processDefinitionKey: ProcessKey
+          processDefinitionId: 234h23kjh423jh
+          processInstanceId: j23j
+          formKey: frm:LoanDataValidation
+          startTime: 2016-10-30'T'12:55:00
+          endTime: 2016-12-30'T'12:55:00
+          duration: 3600000
+        -
+          id: 16c2ae22-2264-11e6-bbf5-848b945f5a44
+          name: Input data
+          assignee: demo.user
+          created: 2016-10-30'T'12:55:00
+          due: 2016-11-30'T'12:55:00
+          description: Input all data
+          priority: 50
+          processDefinitionKey: ProcessKeyInput
+          processDefinitionId: 234h23kjh423jh
+          processInstanceId: j23j
+          formKey: frm:LoanDataInput
+          startTime: 2016-10-30'T'12:55:00
+          endTime: 2016-12-30'T'12:55:00
+          duration: 1200000
+
+  task:
+    description: Task data
+    type: object
+    properties:
+      id:
+        description: An ID of the task
+        type: string
+      name:
+        description: The task name.
+        type: string
+      assignee:
+        description: The assignee's id.
+        type: string
+      created:
+        description: The time the task ended. Has the format yyyy-MM-dd'T'HH:mm:ss
+        type: string
+        format: date-time
+      due:
+        description: The task's due date. Has the format yyyy-MM-dd'T'HH:mm:ss.
+        type: string
+        format: date-time
+      description:
+        description: The task's description.
+        type: string
+      priority:
+        description: The task's priority.
+        type: number
+        format: int32
+      processDefinitionKey:
+        description: |
+          The key of the process definition the task belongs to.
+          History data only.
+        type: string
+      processDefinitionId:
+        description: The id of the process definition the task belongs to.
+        type: string
+      processInstanceId:
+        description: The id of the process instance the task belongs to.
+        type: string
+      formKey:
+        description: Form identifier for User Task execution.
+        type: string
+      startTime:
+        description: The time the task was started. Has the format yyyy-MM-dd'T'HH:mm:ss
+        type: string
+        format: date-time
+      endTime:
+        description: The time the task ended. Has the format yyyy-MM-dd'T'HH:mm:ss
+        type: string
+        format: date-time
+      duration:
+        description: The time the task took to finish (in milliseconds).
+        type: number
+        format: int64
+    example:
+      id: 16c2ae11-2264-11e6-bbf5-848b945f5a44
+      name: Check input data
+      assignee: demo.user
+      created: 2016-10-30'T'12:55:00
+      due: 2016-11-30'T'12:55:00
+      description: Validate all data
+      priority: 50
+      processDefinitionKey: ProcessKey
+      processDefinitionId: 234h23kjh423jh
+      processInstanceId: j23j
+      formKey: frm:LoanDataValidation
+      startTime: 2016-10-30'T'12:55:00
+      endTime: 2016-12-30'T'12:55:00
+      duration: 3600000
+
+  comment-list:
+    type: array
+    description: List of comments, sorted by create date in ascending order.
+    items:
+      $ref: '#/definitions/comment'
+
+  comment:
+    description: Comment that any user can make
+    type: object
+    properties:
+      id:
+        description: An ID of the comment
+        type: string
+      user-id:
+        description: The ID of the user that made a comment
+        type: string
+      task-id:
+        description: The ID of the task that comment relates to
+        type: string
+      message:
+        description: The comment itself.
+        type: string
+      created:
+        description: The time the comment. Has the format yyyy-MM-dd'T'HH:mm:ss
+        type: string
+        format: date-time
+
+
+  process-instance-list:
+    type: array
+    format: csv
+    description: List of tasks
+    items:
+      $ref: '#/definitions/process-instance'
+    example:
+      items:
+        -
+          id: 2b45c4fe-1bfc-11e6-a392-848b945f5a44
+          definitionId: invoice:1:694b9151-173e-11e6-a8af-848b945f5a44
+          businessKey: Invoice No 123
+          state: started
+        -
+          id: 2b45c4dd-1bfc-11e6-a392-848b945f5a44
+          definitionId: invoice:1:694b9151-173e-11e6-a8af-848b945f5a44
+          businessKey: Invoice No 345
+          state: ended
+
+  process-instance:
+    description: Process instance data
+    type: object
+    properties:
+      id:
+        description: The process id.
+        type: string
+      definitionId:
+        description: The id of the process definition this instance belongs to.
+        type: string
+      businessKey:
+        description: The business key of the process instance.
+        type: string
+      state:
+        description: A flag indicating whether the process instance is suspended or not.
+        type: string
+        enum: [ended, suspended, started]
+    example:
+      id: 2b45c4fe-1bfc-11e6-a392-848b945f5a44
+      definitionId: invoice:1:694b9151-173e-11e6-a8af-848b945f5a44
+      businessKey: Invoice No 123
+      state: started
+
+  type-info:
+    type: object
+    properties:
+      objectTypeName:
+        type: string
+        description: |
+          Full java type name, serializable, e.g. java.util.ArrayList
+          Example for ArrayList:
+            [
+              "accounting",
+              "sales"
+            ]
+      objectMimeType:
+        type: string
+        description: |
+          The way to interpret the value. Can be null for non serialized values, such as primitive types or files
+          x-java-serialized-object is also serialized as JSON.
+          Example:
+                    - application/json
+                    - application/x-java-serialized-object
+                    - application/xml
+                    - application/octet-stream
+                    - text/xml
+                    - text/json
+      filename:
+        type: string
+        description: Optional, name of the file, if the variable is file
+
+  variable-list:
+    type: array
+    format: csv
+    description: List of variables
+    items:
+      $ref: '#/definitions/variable'
+    example:
+      items:
+        - amount:
+            type: "double"
+            value: 10.99
+            valueInfo: {}
+        - address:
+            type: "string"
+            value: Some Address
+            valueInfo: {}
+
+  variable:
+    type: object
+    description: Variable model for both Task and Process Instance
+    properties:
+      type:
+        type: string
+        enum:
+          - string
+          - boolean
+          - integer
+          - long
+          - double
+          - date
+          - file
+          - object
+        description: |
+          The value type of the variable.
+          All are primitive, except 'object', which means that type-info must exist.
+          Same behavior as 'object' is for null value.
+      value:
+        type: string
+        description: String/Number/Boolean/Object
+      type-info:
+        $ref: '#/definitions/type-info'
+
+    example:
+      amount:
+        type: "double"
+        value: 10.99
+        valueInfo: {}
+
+  process-definition-list:
+    type: array
+    format: csv
+    description: List of definitions
+    items:
+      $ref: '#/definitions/process-definition'
+    example:
+      items:
+        -
+          id: invoice:1:694b9151-173e-11e6-a8af-848b945f5a44
+          key: invoice
+          description: Invoice management
+          name: Invoice Manamement
+          version: 1
+          suspended: false
+        -
+          id: invoice:2:694b9151-173e-11e6-a8af-848b945f5a44
+          key: invoice
+          description: Invoice management v2
+          name: Invoice Manamement
+          version: 2
+          suspended: false
+
+  process-definition:
+    description: Process definition data
+    type: object
+    properties:
+      id:
+        description: The id of the process definition.
+        type: string
+      key:
+        description: The key of the process definition i.e. the id of the BPMN 2.0 XML process definition.
+        type: string
+      description:
+        description: The description of the process definition.
+        type: string
+      name:
+        description: The name of the process definition.
+        type: string
+      version:
+        description: The version of the process definition that the engine assigned to it.
+        type: number
+        format: int32
+      suspended:
+        description: A flag indicating whether the definition is suspended or not.
+        type: boolean
+    example:
+      id: invoice:1:694b9151-173e-11e6-a8af-848b945f5a44
+      key: invoice
+      description: Invoice management
+      name: Invoice Manamement
+      version: 1
+      suspended: false
+
+  message:
+    type: object
+    description: |
+      Message name - a name of the message.
+
+      Correlation keys: List of variables that are used to correlate message to a process instance.
+
+      Variables: List of variables that are added to a process instance variable map.
+    properties:
+      messageName:
+        type: string
+      correlationKeys:
+        $ref: '#/definitions/variable-list'
+      variables:
+        $ref: '#/definitions/variable-list'
