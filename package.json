@@ -4,7 +4,7 @@
   "private": false,
   "description" : "Test project for Travis CLI",
   "scripts": {
-    "start": "node swagger validate "
+    "test": "node test_yaml.js"
   },
   "dependencies": {
     "swagger-parser": "*"
