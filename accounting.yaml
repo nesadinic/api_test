@@ -1,0 +1,742 @@
+swagger: '2.0'
+info:
+  version: v1
+  title: Accounting API
+  description: |
+    Accounting API tracks positions and transactions on customer account arrangements.   Account arrangements have their accounts that track positions affected by entries posted with     transactions. Statements report changes during certain time period. Exposed endpoints are optimized for bulk access and support incremental synchronization
+  contact:
+    name: Aleksandar Milosevic
+    url: http://dev.asseco-see.com/docs/accounting-getstarted.html
+    email: aca@see.asseco.com
+host: bankapi.net
+basePath: /v1/accounting
+schemes:
+  - http
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+tags:
+  - name: Accounts
+    description: Working with accounts
+  - name: Transactions
+    description: Working with transactions
+  - name: Balances
+    description: Working with balances
+  - name: Statements
+    description: Working with statements
+  - name: Classifications
+    description: Working with classifications
+
+paths:
+# ****************************************************#
+# ENDPOINTS SPECIFIC TO ACCOUNTING API                #
+# ****************************************************#
+
+  /transactions:
+    get1:
+      summary: Get bulk list of account financial transactions
+      description: Returns bulk list of account transactions based on supplied filters. This endpoint supports incremental synchronization so implicit sort order is by `sync-timestamp` ascending. so implicit sort order is by `sync-timestamp` ascending.
+      operationId: Transactions_GetList
+      produces:
+      - text/csv
+      - application/json
+      tags:
+        - Transactions
+      x-asee-tags:
+        - Bulk
+        - Sync
+        - Shapeable
+      parameters:
+        - $ref: "#/parameters/accounts-param"
+        - $ref: "#/parameters/sync-timestamp-param"
+        - $ref: "#/parameters/include-param"
+        - $ref: "#/parameters/trim-param"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/transactions'
+        default:
+          $ref: '#/responses/default-error-response'
+  /statements:
+    get:
+      summary: Get bulk list of account statements
+      description: Returns bulk list of account statements based on supplied filters. This endpoint supports incremental synchronization so implicit sort order is by `sync-timestamp` ascending.
+      operationId: Statements_GetList
+      produces:
+      - text/csv
+      - application/json
+      tags:
+        - Statements
+      x-asee-tags:
+        - Bulk
+        - Sync
+      parameters:
+        - $ref: "#/parameters/accounts-param"
+        - $ref: "#/parameters/sync-timestamp-param"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/statements'
+        default:
+          $ref: '#/responses/default-error-response'
+  /balances:
+    get:
+      summary: Get bulk list of account balances
+      description: Returns bulk list of account balances based on supplied filters. This endpoint supports incremental synchronization so implicit sort order is by `sync-timestamp` ascending.
+      operationId: Balances_GetList
+      produces:
+      - text/csv
+      - application/json
+      tags:
+        - Balances
+      x-asee-tags:
+        - Bulk
+        - Sync
+      parameters:
+        - name: kinds
+          description: |
+            Optional list of balance kinds that are requested. If empty or not present, it is interpreted that all balances applicable for an account are requested.
+            For a list of possible values see [balance-kinds](accounting-classifications.html#balance-kinds) enumeration.
+          type: array
+          items:
+            type: string
+          in: query
+          collectionFormat: csv
+          enum:
+            - available
+            - current
+            - expected
+            - blocked
+            - outstanding
+            - advance
+            - opening
+            - closing
+        - $ref: "#/parameters/accounts-param"
+        - $ref: "#/parameters/sync-timestamp-param"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/balances'
+        default:
+          $ref: '#/responses/default-error-response'
+  /accounts:
+    get:
+      summary: Get bulk list of accounts information
+      description: Returns bulk list of accounts based on supplied filters. This endpoint is optimized for incremental synchronization.
+      operationId: Accounts_GetList
+      produces:
+      - text/csv
+      - application/json
+      tags:
+        - Accounts
+      x-asee-tags:
+        - Bulk
+        - Sync
+      parameters:
+        - $ref: "#/parameters/accounts-param"
+        - $ref: "#/parameters/sync-timestamp-param"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/accounts'
+        default:
+          $ref: '#/responses/default-error-response'
+
+
+# ****************************************************#
+# ENDPOINTS COMMON WITH OTHER APIs                    #
+# ****************************************************#
+
+  /classifications:
+    get:
+      summary: List all classification schemas used by the API
+      description: Some fields and parameters have been restricted to a list of allowed lookup values maintained by the bank. This method lists all schemas used in this API.
+      operationId: "Classifications_GetList"
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/classification-list'
+        default:
+          $ref: '#/responses/default-error-response'
+      tags:
+        - Classifications
+
+  /classifications/{schema-id}:
+    get:
+      summary: List values allowed by given classification schema.
+      description: Returns all classification values for chosen classification.
+      operationId: Classifications_Get
+      parameters:
+        - $ref: '#/parameters/schema-id-param'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/classification'
+        default:
+          $ref: '#/responses/default-error-response'
+
+      tags:
+        - Classifications
+
+parameters:
+# ****************************************************#
+# PARAMETERS COMMON WITH OTHER APIs                   #
+# ****************************************************#
+  schema-id-param:
+    name: schema-id
+    description: Identifier of classification schema
+    in: path
+    required: true
+    type: string
+  include-param:
+    description: List of fields to include in response. For more information see general guidance on [response shaping](common-getstarted.html#shaping)
+    in: query
+    name: include
+    type: array
+    items:
+      type: string
+    collectionFormat: csv
+    x-asee-common: true
+  trim-param:
+    description: List of fields to trim from response. For more information see general guidance on [response shaping](common-getstarted.html#shaping)
+    in: query
+    name: trim
+    type: array
+    items:
+      type: string
+    collectionFormat: csv
+    x-asee-common: true
+  accounts-param:
+    name: accounts
+    description: Optional list of accounts of interest. If empty or not present, it is interpreted as all accounts are interesting.
+    type: array
+    items:
+      type: string
+    collectionFormat: csv
+    in: query
+  sync-timestamp-param:
+    name: sync-timestamp
+    description: Optional timestamp indicator for incremental synchronization. If supplied items that have been recorded or updated after it will be returned. If empty or not present, all items will be returned
+    type: string
+    in: query
+
+responses:
+# ****************************************************#
+# RESPONSES COMMON WITH OTHER APIs                    #
+# ****************************************************#
+
+  default-error-response:
+    description: Besides specific status codes above, other standard http [status codes](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html) can be returned for each request. To learn more see general guidance on [error handling](common-getstarted.html#error-handling)
+
+definitions:
+# ****************************************************#
+# MODELS COMMON WITH OTHER APIs                       #
+# ****************************************************#
+
+  classification-value:
+    type: object
+    description: Classification value
+    properties:
+      literal:
+        description: Literal that uniquely identifies classification value
+        type: string
+      code:
+        description: Optional, yet unique code of classification value
+        type: string
+      description:
+        description: Description of classification value
+        type: string
+      parent-literal:
+        description: Optional literal of parent classification value if schema is hierarchical
+        type: string
+    example:
+      literal: billing
+      code: 2
+      description: Contact may be used to provide party with details of their liabilities to the bank
+  classification-list:
+    description: List of classification schemas
+    type: object
+    properties:
+      items:
+        description: List of classification schemas
+        items:
+          $ref: "#/definitions/classification-info"
+        type: array
+    example:
+      -
+        schema-id: filing-purpose
+        name: Filing Purpose
+        description: List of possible uses of document in business context. Commonly used filing purposes are document, customer-picture
+      -
+        schema-id: folder-purpose
+        name: Folder Purpose
+        description: List of possible uses of a folder in business context.
+  classification-info:
+    description: Basic information on classification schema
+    properties:
+      schema-id:
+        type: string
+        description: Unique literal that identifies the classification schema. Always in `lowercase-dash` convention.
+      name:
+        type: string
+        description: User friendly name of classification
+      description:
+        type: string
+        description: Description of a classification
+    example:
+      schema-id: filing-purpose
+      name: Filing Purpose
+      description: List of possible uses of document in business context. Commonly used filing purposes are document, customer-picture
+  classification:
+    type: object
+    description: Classification schema details
+    properties:
+      schema-id:
+        type: string
+        description: Unique literal that identifies the classification schema. Always in `lowercase-dash` convention.
+      name:
+        type: string
+        description: User friendly name of classification
+      description:
+        type: string
+        description: Description of a classification
+      values:
+        description: List of allowed classification values
+        type: array
+        items:
+          $ref: "#/definitions/classification-value"
+    example:
+      schema-id: contact-purpose
+      name: Contact Purpose
+      description: List of possible uses of contact in business context. Commonly used filing purposes are billing, marketing
+      values:
+        - literal: billing
+          code: 1
+          description: Contact may be used to provide party with details of their liabilities to the bank
+        - literal: marketing
+          code: 2
+          description: Contact may be used to provide party with details of offers
+        - literal: reporting
+          code: 3
+          description: Contact may be used to provide party with reports on their account
+
+# ****************************************************#
+# MODELS SPECIFIC FOR ACCOUNTING APIs                 #
+# ****************************************************#
+
+  accounts:
+    type: array
+    description: List of accounts
+    items:
+      $ref: '#/definitions/account'
+    example:
+      - account-number: 00210102101
+        effective-date: 2016-01-01
+        status-date: 2016-01-01
+        currency: EUR
+        status: open
+        posting-status: post-all
+        kind: demand-deposit
+        sync-timestamp: 25722121
+      - account-number: 00210102101
+        effective-date: 2016-01-01
+        status-date: 2016-01-01
+        currency: RSD
+        status: open
+        posting-status: post-all
+        kind: current-account
+        sync-timestamp: 24732399
+  account:
+    description: Record of transactions in specific types of arrangement, maintained by a bank party on behalf of one or more owning parties.
+    type: object
+    properties:
+      account-number:
+        description: Unique identifier of the account arrangement which is tracked. Used in communication with customer.
+        type: string
+      effective-date:
+        type: string
+        format: date
+        description: The date when account was first put to use
+      status-date:
+        type: string
+        format: date-time
+        description: The date when last status change occured - since current status is efective.
+      currency:
+        description: Currency in which balances are tracked for this account. ISO 4217 currency code.
+        type: string
+        maxLength: 3
+        minLength: 3
+      status:
+        description: |
+          Status code representing step from the account lifecycle.
+          For a list of possible values see [account-statuses](accounting-classifications.html#account-statuses) enumeration.
+        type: string
+        enum:
+          - open
+          - opening
+          - closed
+          - closing
+          - archived
+      posting-status:
+        description: |
+          For a list of possible values see [account-posting-statuses](accounting-classifications.html#account-posting-statuses) enumeration.
+        type: string
+        enum:
+          - not-postable
+          - no-further-drawings
+          - post-all
+          - debit-only
+          - credit-only
+      kind:
+        description: |
+          Kind of account used for tracking. This determines balances that make sense.
+          For a list of possible values see [account-kinds](accounting-classifications.html#account-kinds) enumeration.
+        type: string
+        enum:
+          - current-account
+          - demand-deposit-account
+          - term-deposit-account
+          - term-loan-account
+          - overdraft-account
+          - credit-facility-account
+          - credit-card-account
+          - investment-account
+      sync-timestamp:
+        description: Monotonically increasing timestamp of account record used for incremental synchronization with client application
+        type: string
+    example:
+      account-number: 00210102101
+      effective-date: 2016-01-01
+      status-date: 2016-01-01
+      currency: EUR
+      status: open
+      posting-status: post-all
+      kind: current-account
+      sync-timestamp: 26447476
+  statements:
+    type: array
+    description: List of statements
+    items:
+      $ref: '#/definitions/statement'
+    example:
+      - from-date: 2016-01-01
+        to-date: 2016-01-31
+        account-number: 00210102101
+        sequence-number: 26
+        generated: 2016-02-01T01:25:00
+        document: AS-0021000102101-26
+        total-credits: 1
+        total-debits: 3
+        currency: EUR
+        opening-balance: 20.00
+        closing-balance: 180.00
+        sync-timestamp: 26447476
+      - from-date: 2015-12-01
+        to-date: 2015-12-31
+        account-number: 00210102101
+        sequence-number: 25
+        generated: 2016-01-01T01:27:00
+        document: AS-0021000102101-25
+        total-credits: 2
+        total-debits: 5
+        currency: EUR
+        opening-balance: 45.00
+        closing-balance: 20.00
+        sync-timestamp: 25244711
+  statement:
+    type: object
+    description: Report of entries booked against the account in specified period of time
+    properties:
+      from-date:
+        description: Date when period reported in the statement begins
+        type: string
+        format: date
+      to-date:
+        description: Date when period reported in the statement ends
+        type: string
+        format: date
+      account-number:
+        description: Unique identifier of the account arrangement for which the statement is generated
+        type: string
+      sequence-number:
+        description: Official sequence number of the statement incremented as the statements are generated
+        type: number
+      generated:
+        description: Date and time when statement was generated
+        type: string
+        format: date-time
+      document:
+        description: Unique identifier of the statement document stored in DMS repository
+        type: string
+      total-credits:
+        description: Total number of credit entries in the statement
+        type: number
+      total-debits:
+        description: Total number of debit entries in the statement
+        type: number
+      currency:
+        description: Currency code.
+        type: string
+      opening-balance:
+        description: Booked balance at the start of reported period
+        type: number
+        format: double
+      closing-balance:
+        description: Booked balance at the start of reported period
+        type: number
+        format: double
+      sync-timestamp:
+        description: Monotonically increasing timestamp of statement record used for incremental synchronization with client application
+        type: string
+    example:
+      from-date: 2016-01-01
+      to-date: 2016-01-31
+      account-number: 00210102101
+      sequence-number: 26
+      generated: 2016-02-01T01:25:00
+      document: AS-0021000102101-26
+      total-credits: 1
+      total-debits: 3
+      currency: EUR
+      opening-balance: 20.00
+      closing-balance: 180.00
+      sync-timestamp: 26447476
+  balances:
+    type: array
+    description: List of balances
+    items:
+      $ref: '#/definitions/balance'
+    example:
+      - account-number: 00210102101
+        amount: 100.00
+        amount-local: 12283.50
+        currency: EUR
+        direction: d
+        balance-kind: available
+        calculated: 2016-02-23T15:50:00
+        sync-timestamp: 26447476
+      - account-number: 00210102101
+        amount: 100.00
+        amount-local: 12283.50
+        currency: EUR
+        direction: d
+        balance-kind: current
+        calculated: 2016-02-23T11:25:00
+        sync-timestamp: 26447211
+  balance:
+    type: object
+    description: Monetary value tracked on the account.
+    properties:
+      currency:
+        description: Currency code.
+        type: string
+      amount:
+        description: Balance ammount in account currency
+        format: double
+        type: number
+      amount-local:
+        description: Balance amount in local currency
+        format: double
+        type: number
+      account-number:
+        description: Unique identifier of the account arrangement for which the balance is tracked.
+        type: string
+      direction:
+        description: Debit (`d`) for liabilities or credit (`c`) for assets
+        type: string
+        enum:
+          - d
+          - c
+      balance-kind:
+        description: |
+          Enumeration that distinguishes between account balances according to their nature
+          For a list of possible values see [balance-kinds](accounting-classifications.html#balance-kinds) enumeration.
+        type: string
+        enum:
+          - available
+          - current
+          - expected
+          - blocked
+          - outstanding
+          - advance
+          - opening
+          - closing
+      calculated:
+        description: Date and time when balance was calculated. Note that this is not the time when balance was requested, it is rather the time when last transaction affected the balance.
+        type: string
+        format: date-time
+      sync-timestamp:
+        description: Monotonically increasing timestamp of balance record used for incremental synchronization with client application. If balance is calculated that timestamp of last transaction that affected balance should be used.
+        type: string
+    example:
+      account-number: 00210102101
+      amount: 100.00
+      amount-local: 12283.50
+      currency: EUR
+      direction: d
+      balance-kind: available
+      calculated: 2016-02-23T11:25:00
+      sync-timestamp: 26447476
+
+  transactions:
+    type: array
+    description: List of transactions
+    items:
+      $ref: '#/definitions/transaction'
+    example:
+      - account-number: 00210102101
+        transaction-id: 6525671616121
+        instruction-id: 6525671616121
+        statement-number: 26
+        source: brn
+        amount: 100.00
+        amount-local: 12283.50
+        currency: EUR
+        direction: d
+        status: b
+        value-date: 2016-02-23
+        book-date: 2016-02-23
+        transaction-time: 2016-02-23T11:25:00
+        description: Branch cash withdrawal
+        transaction-code: 212
+        transaction-kind: wdw
+        sync-timestamp: 26447476
+      - account-number: 00210102101
+        transaction-id: 652567161100
+        instruction-id: 712531288123121
+        statement-number: 26
+        source: pmt
+        amount: 340000.00
+        amount-local: 340000.00
+        currency: RSD
+        direction: c
+        status: b
+        value-date: 2016-02-22
+        book-date: 2016-02-22
+        transaction-time: 2016-02-22T15:50:00
+        description: Payment received from Asseco SEE d.o.o.
+        transaction-code: 722
+        transaction-kind: pmt
+        sync-timestamp: 26447479
+  transaction:
+    description: Event that affected balance of interest to customers - principal, outstanding debt, advance, available
+    type: object
+    properties:
+      account-number:
+        type: string
+        description: Unique identifier of account arrangement, unformatted.
+      transaction-id:
+        description: Unique identifier of the transaction in the core system
+        type: string
+      instruction-id:
+        description: Unique identifier of the customer instruction that initiated the transaction. Optional as some transactions are not result of customer instructions.
+        type: string
+      statement-number:
+        description: Identifier of the account statement where transaction was reported.
+        type: string
+      source:
+        description: |
+          Source of additional details of the transaction - Card transaction details (`crd`), Payment details (`pmt`), Standing order details (`sto`), Branch transaction details (`brn`), Internal transaction details (`int`).
+          For a list of possible values see [transaction-sources](accounting-classifications.html#transaction-sources) enumeration.
+        type: string
+        enum:
+          - crd
+          - pmt
+          - sto
+          - brn
+          - int
+      amount:
+        description: Net amount of the transaction that affected account balance. Transaction is linked to multiple entries whose cash flows affect balance.
+        type: number
+        format: double
+      direction:
+        description: Debit (`d`) or credit (`c`) transaction
+        type: string
+        enum:
+          - d
+          - c
+      status:
+        description: |
+          Status of transaction. Pending (`p`), Booked (`b`), Voided (`v`).
+          For a list of possible values see [transaction-statuses](accounting-classifications.html#transaction-statuses) enumeration.
+        type: string
+        enum:
+          - p
+          - b
+          - v
+      amount-local:
+        description: Transaction amount in reporting currency (RSD for serbia)
+        type: number
+        format: double
+      currency:
+        description: ISO 3-Letter currency code of the account balance against which transaction is posted
+        type: string
+      value-date:
+        description: Date when the balance and interest are affected
+        type: string
+        format: date
+      book-date:
+        description: Date when
+        type: string
+        format: date
+      transaction-time:
+        description: Date and time when transaction occured
+        type: string
+        format: date-time
+      description:
+        description: Text that describes transaction
+        type: string
+      transaction-code:
+        description: Classification explaining type of transaction in core system. For a list of possible values see [transaction-codes](accounting-classifications.html#transaction-codes) classification
+        type: string
+      transaction-kind:
+        description: |
+          Enumeration that distinguishes between accounting transactions based on
+          their effect on the customer accounts. Deposit (`dep`), Withdrawal (`wdw`),
+          Payment (`pmt`), Fee (`fee`), Interest credit (`inc`), Reversal (`rev`),
+          Adjustment (`adj`), Loan disbursement (`lnd`), Loan repayment (`lnr`),
+          Foreign currency exchange (`fcx`), Account opening (`aop`), Account closing (`acl`).
+          For a list of possible values see [transaction-kinds](accounting-classifications.html#transaction-kinds) enumeration.
+        type: string
+        enum:
+          - dep
+          - wdw
+          - pmt
+          - fee
+          - inc
+          - rev
+          - adj
+          - lnd
+          - lnr
+          - fcx
+          - aop
+          - acl
+      sync-timestamp:
+        description: Monotonically increasing timestamp of transaction record used for incremental synchronization with client application
+        type: string
+    example:
+      account-number: 00210102101
+      transaction-id: 6525671616121
+      instruction-id: 6525671616121
+      statement-number: 26
+      source: brn
+      amount: 100.00
+      amount-local: 12283.50
+      currency: EUR
+      direction: d
+      status: b
+      value-date: 2016-02-23
+      book-date: 2016-02-23
+      transaction-time: 2016-02-23T11:25:00
+      description: Branch cash withdrawal
+      transaction-code: 212
+      transaction-kind: wdw
+      sync-timestamp: 26447476
