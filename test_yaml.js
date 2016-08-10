@@ -1,6 +1,25 @@
 var fs = require("fs");
 var SwaggerParser = require('swagger-parser');
 
+
+
+function Validator(file) {
+  this.file = file;
+  this.parser = new SwaggerParser();
+}
+Validator.prototype.validate = function() {
+  var me = this;
+  return this.parser.validate(this.file)
+    .then(function(api) {
+      console.log("Valid API, File: %s, API Name: %s, Version: %s", me.file, api.info.title, api.info.version);
+    })
+    .catch(function(err) {
+      console.error("Invalid API, File: %s, Error: %s", me.file, err);
+    });
+};
+
+module.exports = Validator;
+
 function testFiles (dir){
   var files = fs.readdirSync(dir);
    for (var i in files){
@@ -10,16 +29,11 @@ function testFiles (dir){
            console.log("Skipped dir " + fname);
        } else {
          if (fname.endsWith(".yaml")) {
-           SwaggerParser.validate(fname)
-             .then(function(api) {
-               console.log("Valid API: Name: %s, Version: %s %s", api.info.title, api.info.version, fname);
-             })
-             .catch(function(err) {
-               console.error("Error: %s File: %s", err, fname);
-             });
-         } else {
-           console.log("Skipped file " + fname);
-         }
+           var validator = new Validator(fname);
+           validator.validate();
+         } //else {
+           //console.log("Skipped file " + fname);
+         //}
        }
    }
  }
